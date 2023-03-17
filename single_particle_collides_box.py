@@ -2,7 +2,7 @@
 # @Author: Zhangxiaoxu
 # @Date:   2023-03-15 15:27:12
 # @Last Modified by:   longwarriors
-# @Last Modified time: 2023-03-16 17:35:54
+# @Last Modified time: 2023-03-17 17:21:38
 import numpy as np
 import torch
 from torch import tensor
@@ -99,7 +99,7 @@ def init():
 def update(n):  # time[n]
     # set/update the axes data
     timer.set_text("time = {:.3f}".format(n * dt))
-    line1.set_data(coords[:n, 0], coords[:n, 1])
+    line1.set_data(coords[:n+1, 0], coords[:n+1, 1]) # tensor[:1] = tensor[0]
     dot1.set_data(coords[n, 0], coords[n, 1])
     return timer, line1, dot1
 
