@@ -15,7 +15,7 @@ speed = 17.5  # 粒子运动速率
 bound_l, bound_r = -1.5, 1.5  # 包围盒左右边界
 bound_d, bound_u = -1.5, 1.5  # 包围盒上下边界
 n_particles = 150  # 粒子数量
-n_increments = 100000  # dicrete time increments
+n_increments = 20000  # dicrete time increments
 t_end = 3  # 秒
 dt = t_end / n_increments
 t_nodes = torch.linspace(start=0, end=t_end, steps=n_increments + 1, device=engine)  # my convention
@@ -137,8 +137,11 @@ for n in range(n_increments):
 
 """每一帧新增内容逐步显现"""
 data_coords = coords.cpu().numpy()
+data_velocs = velocs.norm(dim=2).cpu().numpy()
+hist_bins = np.linspace(0, 1500, 10)
+
 # 创建画板
-fig = plt.figure(figsize=(8, 6))
+fig = plt.figure(figsize=(8, 8))
 fig.set_tight_layout(True)  # 紧凑组排
 fig.text(
     x=0.8, y=0.04, s="Designed by longwarriors", style="italic", fontsize=8, color="red"
@@ -146,12 +149,17 @@ fig.text(
 
 
 # 创建画布
-ax1 = plt.subplot(1, 1, 1)
+ax1 = plt.subplot(1, 2, 1)
 ax1.set_xlim(bound_l, bound_r)
 ax1.set_ylim(bound_d, bound_u)
 ax1.set_title("Particles collisions")
 ax1.set_xlabel("Coordinate, $x$")
 ax1.set_ylabel("Coordinate, $y$")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.set_title("Frequency statistics")
+ax2.set_xlabel("Velocity, $[m/s]$")
+ax2.set_ylabel("Proportion, $%$")
 
 
 # 创建画布的计时器
@@ -168,31 +176,34 @@ timer = ax1.text(
 # 创建画布的图线 creating empty plots
 # lines = []
 dots = []
+(_, _, hist_obj) = ax2.hist([], bins=int(n_particles/5), density=True)
 for _ in range(n_particles):
-    # line, = ax1.plot([], [], linewidth=3, color="cornflowerblue")
-    (dot,) = ax1.plot([], [], "yo", markersize=10, markeredgecolor="r")
+    # line, = ax1.plot([], [], linewidth=3, color="cornflowerblue")    
     # lines.append(line)
+    (dot,) = ax1.plot([], [], "yo", markersize=10, markeredgecolor="r")
     dots.append(dot)
 
 
 # 清空当前帧 initialize
 def init():
+    hist_obj.set_data([])
     timer.set_text("")
     for i in range(n_particles):
         # lines[i].set_data([], [])
-        dots[i].set_data([], [])
-    # return timer, *lines, *dots  # 解包很重要！
-    return timer, *dots
+        dots[i].set_data([], [])        
+    # return timer, *lines, *dots  
+    return hist_obj, timer, *dots # 解包很重要！
 
 
 # 更新新一帧的数据 refresh
 def update(n):
+    hist_obj.set_data(data_velocs[n])
     timer.set_text("time = {:.3f}".format(n * dt))
     for i in range(n_particles):
         # lines[i].set_data(data_coords[:n, i, 0], data_coords[:n, i, 1])
-        dots[i].set_data(data_coords[n, i, 0], data_coords[n, i, 1])
-    # return timer, *lines, *dots  # 解包很重要！
-    return timer, *dots
+        dots[i].set_data(data_coords[n, i, 0], data_coords[n, i, 1])        
+    # return timer, *lines, *dots 
+    return hist_obj, timer, *dots # 解包很重要！
 
 
 # perform animation
