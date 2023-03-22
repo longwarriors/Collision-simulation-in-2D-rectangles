@@ -2,7 +2,7 @@
 并行计算方法，张量编程和OPP编程的对比
 
 ## 碰撞检测  
-![](pic/2d-collision-model.jpg)  
+![p1](pic/2d-collision-model.jpg)  
 
 ## 运动改变
 **问题一：帧间隔太慢**   
@@ -12,8 +12,8 @@
 
 
 ## 玻尔兹曼分布  
-&emsp;&emsp;可以利用演化结果验证[2D麦克斯韦-玻尔兹曼速率分布](https://en.wikipedia.org/wiki/Maxwell%E2%80%93Boltzmann_distribution#Relation_to_the_2D_Maxwell%E2%80%93Boltzmann_distribution)  
-
+&emsp;&emsp;可以利用演化结果验证[2D麦克斯韦-玻尔兹曼速率分布](https://en.wikipedia.org/wiki/Maxwell%E2%80%93Boltzmann_distribution#Relation_to_the_2D_Maxwell%E2%80%93Boltzmann_distribution)    
 $$
 \mathbb{P}(u<|\vec{v}|<u+du)=pdf(u)=\frac{mu}{kT}\exp{\left(\frac{-mu^2}{2kT}\right)}
 $$
+在$u\isin[1,+\inf)$域内积分是归一化的。
