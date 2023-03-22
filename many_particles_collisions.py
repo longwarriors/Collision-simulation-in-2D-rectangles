@@ -11,16 +11,14 @@ engine = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 """参数设置"""
 radius = 0.02  # 圆盘半径
-speed = 5.5  # 粒子运动速率
+speed = 17.5  # 粒子运动速率
 bound_l, bound_r = -1.5, 1.5  # 包围盒左右边界
 bound_d, bound_u = -1.5, 1.5  # 包围盒上下边界
-n_particles = 200  # 粒子数量
-n_increments = 10000  # dicrete time increments
-t_end = 5  # 秒
+n_particles = 150  # 粒子数量
+n_increments = 100000  # dicrete time increments
+t_end = 3  # 秒
 dt = t_end / n_increments
-t_nodes = torch.linspace(
-    start=0, end=t_end, steps=n_increments + 1, device=engine
-)  # my convention
+t_nodes = torch.linspace(start=0, end=t_end, steps=n_increments + 1, device=engine)  # my convention
 
 
 # 核心目标是求解坐标张量和速度张量
@@ -29,11 +27,10 @@ velocs = torch.empty(size=(n_increments + 1, n_particles, 2), device=engine)
 
 
 def uniform_points(low_bounds: torch.tensor, high_bounds: torch.tensor, n_points):
-    """
+    """在区域内产生均匀分布的点 [[x0, y0, z0], [x1, y1, z1], [x2, y2, z2], ......]
+    numpy.random.uniform 的每个维度的边界都一样不能改
     low_bounds  = [x_low,  y_low,  z_low]
     high_bounds = [x_high, y_high, z_high]
-    在区域内产生均匀分布的点 [[x0, y0, z0], [x1, y1, z1], [x2, y2, z2], ......]
-    numpy.random.uniform 的每个维度的边界都一样不能改
     randX = (x_high - x_low) * torch.rand() + x_low
     randY = (y_high - y_low) * torch.rand() + y_low
     randZ = (z_high - z_low) * torch.rand() + z_low
@@ -51,9 +48,8 @@ coords[0] = uniform_points(
     n_points=n_particles,
 )  # 随机给一组初始坐标
 directions = 1 - 2 * torch.rand(n_particles, 2)
-directions = directions / directions.norm(p=2, dim=1).view(
-    -1, 1
-)  # torch.nn.functional.normalize(directions, p=2, dim=1)
+directions = directions / directions.norm(p=2, dim=1).view(-1, 1)
+# directions = torch.nn.functional.normalize(directions, p=2, dim=1)
 velocs[0] = speed * directions  # 随机给一个初始速度矢量
 
 
@@ -78,17 +74,21 @@ for n in range(n_increments):
         (coords[n, :, 1] < bound_d + radius) & (velocs[n, :, 1] < 0)
     ) | ((coords[n, :, 1] > bound_u - radius) & (velocs[n, :, 1] > 0))
 
+
     """把撞围栏的粒子速度提取出来"""
     velocs_reflect_vertical = velocs[n][collisions_vertical]
     velocs_reflect_horizon = velocs[n][collisions_horizon]
+
 
     """撞竖直围栏则vx反号，撞水平围栏则vy反号"""
     velocs_reflect_vertical[:, 0] = velocs_reflect_vertical[:, 0] * -1  # -vx
     velocs_reflect_horizon[:, 1] = velocs_reflect_horizon[:, 1] * -1  # -vy
 
+
     """把经过修改的速度刷新回去"""
     velocs[n][collisions_vertical] = velocs_reflect_vertical
     velocs[n][collisions_horizon] = velocs_reflect_horizon
+
 
     """相互碰撞检测"""
     coords_pairs = coords[n].index_select(0, id_pairs_vec)  # 按组合编号vector索引出来的粒子坐标构成的矩阵
@@ -100,35 +100,35 @@ for n in range(n_increments):
     dx_dy.squeeze_()  # 压缩所有值为1的维度成为matrix
     distance_pairs = dx_dy.norm(dim=-1)  # 粒子的坐标组合的距离vector
     collisions_other = distance_pairs < (2 * radius)  # 此刻相互距离小于2r的小球组合在下一刻被弹开
-    # if collisions_other[n-1] = True
-    # and collisions_other[n]   = True
-    # set collisions_other[n]   = False
+    if n > 0: # 相互碰撞条件 dr[n] < 2*r & dr[n] < dr[n-1]
+        coords_pairs_before = coords[n-1].index_select(0, id_pairs_vec)
+        coords_pairs_before = coords_pairs_before.view(-1, 2, 2)
+        dx_dy_before = coords_pairs_before.diff(dim=1)
+        dx_dy_before.squeeze_()
+        distance_pairs_before = dx_dy_before.norm(dim=-1)
+        collisions_other = collisions_other & (distance_pairs < distance_pairs_before)
+
 
     """把相互碰撞的粒子坐标和速度提取出来"""
-    coords_collided_pairs = coords_pairs[
-        collisions_other
-    ]  # 碰撞组合的坐标张量，如果没有碰撞则size=(0, 2, 2)
-    velocs_collided_pairs = velocs_pairs[
-        collisions_other
-    ]  # 碰撞组合的速度张量，如果没有碰撞则size=(0, 2, 2)
-    dr_collided_pairs = coords_collided_pairs.diff(
-        dim=1
-    ).squeeze()  # 碰撞组合的相对位置matrix，如果没有碰撞则size=(0, 2)
-    dv_collided_pairs = velocs_collided_pairs.diff(
-        dim=1
-    ).squeeze()  # 碰撞组合的相对速度matrix，如果没有碰撞则size=(0, 2)
+    coords_collided_pairs = coords_pairs[collisions_other]  # 碰撞组合的坐标张量，如果没有碰撞则size=(0, 2, 2)
+    velocs_collided_pairs = velocs_pairs[collisions_other]  # 碰撞组合的速度张量，如果没有碰撞则size=(0, 2, 2)
+    dr_collided_pairs = coords_collided_pairs.diff(dim=1).squeeze()  # 碰撞组合的相对位置matrix，如果没有碰撞则size=(0, 2)
+    dv_collided_pairs = velocs_collided_pairs.diff(dim=1).squeeze()  # 碰撞组合的相对速度matrix，如果没有碰撞则size=(0, 2)
+
 
     """相互碰撞后的粒子速度"""
-    k_collided_pairs = dr_collided_pairs * dv_collided_pairs  # 如果没有碰撞则size=(0, 2)
-    k_collided_pairs = k_collided_pairs.sum(dim=1)  # 内积变为vector
+    k_collided_pairs = (dr_collided_pairs * dv_collided_pairs).sum(-1) # 内积 torch.einsum("ij,ij->i", dr_collided_pairs, dv_collided_pairs)
     k_collided_pairs = k_collided_pairs / distance_pairs[collisions_other] ** 2
-    k_collided_pairs = torch.einsum("i,ij->ij", k_collided_pairs, dr_collided_pairs)
+    k_collided_pairs = k_collided_pairs.unsqueeze(dim=1) * dr_collided_pairs
+    # k_collided_pairs = torch.diag(k_collided_pairs) @ dr_collided_pairs
+    # k_collided_pairs = torch.einsum("i,ij->ij", k_collided_pairs, dr_collided_pairs)
 
     velocs_collided_pairs[:, 0] = velocs_collided_pairs[:, 0] + k_collided_pairs
     velocs_collided_pairs[:, 1] = velocs_collided_pairs[:, 1] - k_collided_pairs
-    velocs_new = velocs_collided_pairs.flatten(0, 1)  # list of vectors
     id_collided = id_pairs[collisions_other].flatten()  # 碰撞粒子组合的编号
+    velocs_new = velocs_collided_pairs.flatten(0, 1)  # list of vectors
     velocs[n].index_copy_(0, id_collided, velocs_new)  # 按碰撞的粒子编号替换新速度矢量
+
 
     """按新速度更新粒子位置"""
     coords[n + 1] = coords[n] + velocs[n] * dt
