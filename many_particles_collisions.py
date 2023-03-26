@@ -10,8 +10,8 @@ engine = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 """参数设置"""
-radius = 0.03  # 圆盘半径
-speed = 30.5  # 粒子运动速率
+radius = 0.03  # 圆盘半径，注意要和markersize匹配才像碰撞
+speed = 16.5  # 粒子运动速率
 bound_l, bound_r = -1.5, 1.5  # 包围盒左右边界
 bound_d, bound_u = -1.5, 1.5  # 包围盒上下边界
 n_particles = 250  # 粒子数量
@@ -141,7 +141,7 @@ for n in range(n_increments):
 
 
 """每一帧新增内容逐步显现"""
-fig = plt.figure(figsize=(10, 8)) # 创建画板
+fig = plt.figure(figsize=(10, 8))  # 创建画板
 fig.set_tight_layout(True)  # 紧凑组排
 fig.text(
     x=0.8, y=0.04, s="Designed by longwarriors", style="italic", fontsize=8, color="red"
@@ -185,6 +185,8 @@ def init():
 
 # 更新新一帧的数据 refresh
 data_coords = coords.cpu().numpy()
+
+
 def update(n):
     timer.set_text("time = {:.3f}".format(n * dt))
     for i in range(n_particles):
@@ -198,7 +200,7 @@ ani = animation.FuncAnimation(
     update,
     frames=np.arange(0, n_increments + 1, 1, dtype=int),
     interval=0,  # 帧之间的延迟（毫秒）默认为200
-    blit=True,   # 是否执行blitting优化
+    blit=True,  # 是否执行blitting优化
     init_func=init,
 )
 plt.show()
