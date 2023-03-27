@@ -8,6 +8,7 @@ import torch
 from torch import tensor
 from matplotlib import animation
 import matplotlib.pyplot as plt
+
 """
 ===============================================
 Animate elastic collisions of 2d balls in a box
@@ -21,33 +22,25 @@ engine = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # To construct this model, we need an ``Particles`` class and a ``Box`` class
 class ParticlesDynamic:
     def __init__(
-        self,
-        num_particles, radius,
-        coords, velocs, 
-        t_increments, t_end
-        ):  # Initialize a ParticlesDynamic object
-        self.M = num_particles # 粒子数量
-        self.rd = radius       # 圆盘半径
-        self.x_y = coords      # 粒子二维坐标分布
-        self.vx_vy = velocs    # 粒子运动速度分布
+        self, num_particles, radius, coords, velocs, t_increments, t_end
+    ):  # Initialize a ParticlesDynamic object
+        self.M = num_particles  # 粒子数量
+        self.rd = radius  # 圆盘半径
+        self.x_y = coords  # 粒子二维坐标分布
+        self.vx_vy = velocs  # 粒子运动速度分布
         self.N = t_increments  # dicrete time increments
-        self.T = t_end         # 演化时长，秒 evolve lasting
+        self.T = t_end  # 演化时长，秒 evolve lasting
 
     def collide_p():
         pass
 
 
 class Box:
-    def __init__(
-        self, 
-        boundary_left, boundary_right,
-        boundary_down, boundary_up
-        ):
+    def __init__(self, boundary_left, boundary_right, boundary_down, boundary_up):
         self.x_min = boundary_left
         self.x_max = boundary_right
         self.y_min = boundary_down
         self.y_max = boundary_up
-
 
 
 """参数设置"""
@@ -55,11 +48,13 @@ radius = 0.03  # 圆盘半径
 speed = 30.5  # 粒子运动速率
 bound_l, bound_r = -1.5, 1.5  # 包围盒左右边界
 bound_d, bound_u = -1.5, 1.5  # 包围盒上下边界
-n_particles = 250  # 粒子数量
+n_particles = 800  # 粒子数量
 n_increments = 20000  # dicrete time increments
 t_end = 3  # 秒
 dt = t_end / n_increments
-t_nodes = torch.linspace(start=0, end=t_end, steps=n_increments + 1, device=engine)  # my FDM convention
+t_nodes = torch.linspace(
+    start=0, end=t_end, steps=n_increments + 1, device=engine
+)  # my FDM convention
 
 
 # 核心目标是求解坐标张量和速度张量
@@ -180,12 +175,12 @@ for n in range(n_increments):
 
 
 """每一帧新增内容逐步显现"""
-# data_coords = coords.cpu().numpy()
+data_coords = coords.cpu().numpy()
 data_velocs = velocs.norm(dim=2).cpu().numpy()
 
 ###############################################################################
 # 创建画板
-fig = plt.figure(figsize=(10, 4))
+fig = plt.figure(figsize=(18, 7))
 fig.set_tight_layout(True)  # 紧凑组排
 fig.text(
     x=0.8, y=0.04, s="Designed by longwarriors", style="italic", fontsize=8, color="red"
@@ -193,29 +188,29 @@ fig.text(
 
 ###############################################################################
 # 创建画布
-# ax1 = plt.subplot(1, 2, 1)
-# ax1.set_xlim(bound_l, bound_r)
-# ax1.set_ylim(bound_d, bound_u)
-# ax1.set_title("Particles collisions")
-# ax1.set_xlabel("Coordinate, $x$")
-# ax1.set_ylabel("Coordinate, $y$")
+ax1 = plt.subplot(1, 2, 1)
+ax1.set_xlim(bound_l, bound_r)
+ax1.set_ylim(bound_d, bound_u)
+ax1.set_title("Particles collisions")
+ax1.set_xlabel("Coordinate, $x$")
+ax1.set_ylabel("Coordinate, $y$")
 
-ax2 = plt.subplot(1, 1, 1)
-ax2.set_ylim(top=1.0) # 归一化频率不可能超过1
+ax2 = plt.subplot(1, 2, 2)
+ax2.set_ylim(top=1.0)  # 归一化频率不可能超过1
 ax2.set_title("Frequency statistics")
-# ax2.set_xlabel("Velocity, $[m/s]$")
-# ax2.set_ylabel("Proportion, $%$")
+ax2.set_xlabel("Velocity, $[m/s]$")
+ax2.set_ylabel("Proportion")
 
 ###############################################################################
 # 创建画布的计时器ax.text()实例
-# timer1 = ax1.text(
-#     0.8,
-#     0.5,
-#     "",
-#     fontsize=15,
-#     transform=ax1.transAxes,
-#     bbox=dict(facecolor="white", edgecolor="black"),
-# )  
+timer1 = ax1.text(
+    0.8,
+    0.5,
+    "",
+    fontsize=15,
+    transform=ax1.transAxes,
+    bbox=dict(facecolor="white", edgecolor="black"),
+)
 timer2 = ax2.text(
     0.8,
     0.5,
@@ -223,57 +218,59 @@ timer2 = ax2.text(
     fontsize=15,
     transform=ax2.transAxes,
     bbox=dict(facecolor="white", edgecolor="black"),
-)  
+)
 
 ###############################################################################
 # 创建画布的图线 creating empty plots
-# dots = []
-# for _ in range(n_particles):
-#     (dot,) = ax1.plot([], [], "yo", markersize=10, markeredgecolor="r")
-#     dots.append(dot)
+dots = []
+for _ in range(n_particles):
+    (dot,) = ax1.plot([], [], "yo", markersize=10, markeredgecolor="r")
+    dots.append(dot)
 
-n_segment = 66  # n_interval 统计的区间数
-bin_edges = np.linspace(0, 3*speed, n_segment + 1)  # edges or vertices
+n_segment = 100  # n_interval 统计的区间数
+bin_edges = np.linspace(0, 2 * speed, n_segment + 1)  # edges or vertices
 _, _, bar_container = ax2.hist([], bin_edges, lw=2, ec="yellow", fc="green", alpha=0.5)
 
 
 # 清空当前帧 initialize
 def init():
     # ax1 dots
-    # timer1.set_text("")
-    # for i in range(n_particles):
-    #     dots[i].set_data([], [])
+    timer1.set_text("")
+    for i in range(n_particles):
+        dots[i].set_data([], [])
 
     # ax2 hist
     timer2.set_text("")
-    hist, _ = np.histogram(np.zeros_like(data_velocs[0]), bin_edges, density=True)  # _ = bin_edges
+    hist, _ = np.histogram(
+        np.zeros_like(data_velocs[0]), bin_edges, density=True
+    )  # _ = bin_edges
     for count, rect in zip(hist, bar_container.patches):
         rect.set_height(count)
-    # return timer2, bar_container.patches, timer1, *dots  # 解包很重要！
-    return timer2, bar_container.patches
+    return timer2, bar_container.patches, timer1, *dots  # 解包很重要！
+    # return timer2, bar_container.patches
 
 
 # 更新新一帧的数据 refresh
 def update(n):
     # ax1 dots
-    # timer1.set_text("time = {:.3f}".format(n * dt))
-    # for i in range(n_particles):
-    #     dots[i].set_data(data_coords[n, i, 0], data_coords[n, i, 1])
+    timer1.set_text("time = {:.3f}".format(n * dt))
+    for i in range(n_particles):
+        dots[i].set_data(data_coords[n, i, 0], data_coords[n, i, 1])
 
     # ax2 hist
     timer2.set_text("time = {:.3f}".format(n * dt))
     hist, _ = np.histogram(data_velocs[n], bin_edges, density=True)  # _ = bin_edges
     for count, rect in zip(hist, bar_container.patches):
         rect.set_height(count)
-    # return timer2, bar_container.patches, timer1, *dots   # 解包很重要！
-    return timer2, bar_container.patches
+    return timer2, bar_container.patches, timer1, *dots  # 解包很重要！
+    # return timer2, bar_container.patches
 
 
 # perform animation
 ani = animation.FuncAnimation(
     fig,
     update,
-    frames=np.arange(0, n_increments + 1, 10, dtype=int),
+    frames=np.arange(0, n_increments + 1, 5, dtype=int),
     interval=0,  # 帧之间的延迟（毫秒）默认为200
     blit=False,  # 是否执行blitting优化
     init_func=init,
