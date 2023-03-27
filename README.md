@@ -1,5 +1,6 @@
 # Collision-simulation-in-2D-rectangles
-并行计算方法，张量编程和OPP编程的对比
+&emsp;&emsp;并行计算方法，张量编程和OPP编程的对比。  
+&emsp;&emsp;还应该继续提升碰撞后的反应，当粒子数变多以后似乎能量不守恒，速率分布奇怪。还没有完成模块化改造，有时间再修改吧，已经能跑了！
 
 ## 碰撞检测  
 ![p1](pic/2d-collision-model.jpg)  
