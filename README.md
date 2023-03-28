@@ -23,13 +23,7 @@
 
 ## 玻尔兹曼分布   
 
-&emsp;&emsp;可以利用演化结果验证[2D麦克斯韦-玻尔兹曼速率分布](https://en.wikipedia.org/wiki/Maxwell%E2%80%93Boltzmann_distribution#Relation_to_the_2D_Maxwell%E2%80%93Boltzmann_distribution)    
-
-$$
-\mathbb{P}(u<|\vec{v}|<u+du)=pdf(u)=\frac{mu}{kT}\exp{\left(\frac{-mu^2}{2kT}\right)}
-$$  
-
-在 $u\isin[1,+\inf)$ 域内积分是归一化的。
+&emsp;&emsp;可以利用演化结果验证[2D麦克斯韦-玻尔兹曼速率分布](https://en.wikipedia.org/wiki/Maxwell%E2%80%93Boltzmann_distribution#Relation_to_the_2D_Maxwell%E2%80%93Boltzmann_distribution)，即 $\mathbb{P}(u<|\vec{v}|<u+du)=pdf(u)=\frac{mu}{kT}\exp{\left(\frac{-mu^2}{2kT}\right)}$ 。在 $u\isin [1,+\inf)$ 域内积分是归一化的。
 
 ## 动图  
 &emsp;&emsp;```ax.hist()```直方图用```update```方法画动图有问题，不能和其它元素```ax.text()```一起刷新
