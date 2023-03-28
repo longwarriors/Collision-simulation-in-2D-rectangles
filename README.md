@@ -27,8 +27,9 @@
 
 $$
 \mathbb{P}(u<|\vec{v}|<u+du)=pdf(u)=\frac{mu}{kT}\exp{\left(\frac{-mu^2}{2kT}\right)}
-$$
-在$u\isin[1,+\inf)$域内积分是归一化的。
+$$  
+
+在 $u\isin[1,+\inf)$ 域内积分是归一化的。
 
 ## 动图  
 &emsp;&emsp;```ax.hist()```直方图用```update```方法画动图有问题，不能和其它元素```ax.text()```一起刷新
